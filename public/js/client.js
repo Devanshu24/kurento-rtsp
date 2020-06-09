@@ -2,9 +2,11 @@ const socket=io(':8443', {secure: true});
 
 const $startbutton = document.querySelector('#main');
 const $video1 =  document.querySelector('video');
-const $stopbutton = document.querySelector('#stop')
+const $stopbutton = document.querySelector('#stop');
+const $mirror = document.querySelector('#wstart');
 
 $stopbutton.setAttribute('disabled', 'disabled')
+$mirror.setAttribute('disabled', 'disabled')
 
 let videostream = null;
 
@@ -19,6 +21,7 @@ $startbutton.addEventListener('click', ()=> {
         console.log('hah')
         $startbutton.setAttribute('disabled', 'disabled');
         $stopbutton.removeAttribute('disabled');
+        $mirror.removeAttribute('disabled');
     }
 
     const failure = (error)=> {
@@ -37,5 +40,9 @@ $stopbutton.addEventListener('click', () => {
     $startbutton.removeAttribute('disabled');
     $stopbutton.setAttribute('disabled', 'disabled');
 
+})
+
+$mirror.addEventListener('click',() => {
+    
 })
 

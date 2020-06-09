@@ -56,15 +56,22 @@ io.on('connection', (socket)=> {
             return console.log(error);
         }
 
-        pipeline.create('WebRtcEndpoint', (error,webRtc) => {
+        // console.log(pipeline)
+        createMediaElems(pipeline, function(error, webRtc){
             if (error){
-                pipeline.release();
+                return console.log(error)
             }
 
-        })
+            webRtc.addIceCandidate(socket.id)
+        });
+        
 
-
+        
     })
+
+   
+
+
 
 
 })
@@ -82,6 +89,16 @@ function getKurentoClient(client, callback){
         return callback(null, tempClient)
         
     });
+}
+
+function createMediaElems(pipeline, callback){
+    pipeline.create('WebRtcEndpoint', (error,webRtc) => {
+        if (error){
+            pipeline.release();
+            return callback(error);
+        }
+        return callback(null, webRtc)
+    })    
 }
 
 // setTimeout(()=>{
