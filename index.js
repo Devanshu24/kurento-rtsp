@@ -47,6 +47,9 @@ getKurentoClient(kurentoClient, (error, client)=> {
 io.on('connection', (socket)=> {
     console.log("New web socket");
 
+    let webRtcEndpoint;
+    let pipe;
+
     //console.log(socket);
     
     //console.log(kurentoClient)
@@ -62,12 +65,39 @@ io.on('connection', (socket)=> {
                 return console.log(error)
             }
 
-            webRtc.addIceCandidate(socket.id)
-        });
-        
+            connectMediaElems(webRtc, function(error){
+                if (error){
+                    pipeline.release();
+                }
 
+            })
+
+            webRtcEndpoint=webRtc;
+            pipe = pipeline;
+            
+        });
+            
+    });
+
+    // setTimeout(() => {
+    //     console.log(pipe);
+    //     console.log("------------------------")
+    //     console.log(webRtcEndpoint)
         
+    // }, 1000);
+
+    socket.on('sdpOffer', (offer) => {
+        webRtcEndpoint.processOffer(offer, function(error, answer) {
+            if (error){
+                pipeline.release()
+                console.log(error);
+            }
+
+            socket.emit('sdpAnswer', answer)
+            
+        })
     })
+    
 
    
 
@@ -99,6 +129,15 @@ function createMediaElems(pipeline, callback){
         }
         return callback(null, webRtc)
     })    
+}
+
+function connectMediaElems(webRtc, callback){
+    webRtc.connect(webRtc, function(error){
+        if (error){
+            return callback(error);
+        }
+        return callback(null)
+    });
 }
 
 // setTimeout(()=>{
