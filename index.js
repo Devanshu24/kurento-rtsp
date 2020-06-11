@@ -50,6 +50,7 @@ io.on('connection', (socket)=> {
     let webRtcEndpoint;
     let pipe;
     let queue =[];
+    let playerglobal;
 
     //console.log(socket);
     
@@ -69,7 +70,7 @@ io.on('connection', (socket)=> {
             }
     
             // console.log(pipeline)
-            createMediaElems(pipeline, function(error, webRtc){
+            createMediaElems(pipeline, function(error, webRtc, player){
                 if (error){
                     return console.log(error)
                 }
@@ -82,7 +83,7 @@ io.on('connection', (socket)=> {
                     }
                 }
     
-                connectMediaElems(webRtc, function(error, webRtcalt){
+                connectMediaElems(webRtc, player, function(error, webRtcalt, playeralt){
                     if (error){
                         pipeline.release();
                     }
@@ -107,9 +108,14 @@ io.on('connection', (socket)=> {
                         })
                         
                     })
+
+                    playeralt.play(function (error) {
+                        console.log("Error is" + "\n" + error)
+                    })
     
                     webRtcEndpoint=webRtcalt;
                     pipe = pipeline;
+                    playerglobal = playeralt;
     
                 })   
                 
@@ -162,21 +168,34 @@ function getKurentoClient(client, callback){
 }
 
 function createMediaElems(pipeline, callback){
-    pipeline.create('WebRtcEndpoint', (error,webRtc) => {
-        if (error){
-            pipeline.release();
+    const url ="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"
+
+    pipeline.create('PlayerEndpoint', {uri : url}, function (error, player) {
+        if (error) {
+            pipeline.release()
             return callback(error);
         }
-        return callback(null, webRtc)
-    })    
+    
+
+        pipeline.create('WebRtcEndpoint', (error,webRtc) => {
+            if (error){
+                pipeline.release();
+                return callback(error);
+            }
+
+        
+            return callback(null, webRtc, player)
+        })   
+        
+    })
 }
 
-function connectMediaElems(webRtc, callback){
-    webRtc.connect(webRtc, function(error){
+function connectMediaElems(webRtc, player, callback){
+    player.connect(webRtc, function(error){
         if (error){
             return callback(error);
         }
-        return callback(null, webRtc)
+        return callback(null, webRtc, player)
     });
 }
 
