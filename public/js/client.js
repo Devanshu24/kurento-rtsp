@@ -1,12 +1,16 @@
 const socket=io(':8443', {secure: true});
 
 const $startbutton = document.querySelector('#main');
-const $video1 =  document.querySelector('video');
-const $stopbutton = document.querySelector('#stop')
+const $video1 =  document.querySelector('#input');
+const $video2 = document.querySelector('#output');
+const $stopbutton = document.querySelector('#stop');
+const $mirror = document.querySelector('#wstart');
 
 $stopbutton.setAttribute('disabled', 'disabled')
+// $mirror.setAttribute('disabled', 'disabled')
 
 let videostream = null;
+let RtcPeer;
 
 $startbutton.addEventListener('click', ()=> {
     
@@ -19,6 +23,7 @@ $startbutton.addEventListener('click', ()=> {
         console.log('hah')
         $startbutton.setAttribute('disabled', 'disabled');
         $stopbutton.removeAttribute('disabled');
+        // $mirror.removeAttribute('disabled');
     }
 
     const failure = (error)=> {
@@ -39,3 +44,38 @@ $stopbutton.addEventListener('click', () => {
 
 })
 
+$mirror.addEventListener('click',() => {
+    RtcPeer=kurentoUtils.WebRtcPeer.WebRtcPeerSendrecv({
+        localVideo: $video1,
+        remoteVideo: $video2,
+        onicecandidate : iceCandidate
+    }, function (error) {
+        if (error){
+            console.log(error)
+        }
+        console.log("dne")
+    }) 
+
+    RtcPeer.generateOffer((error,offer)=> {
+        console.log(error)
+        socket.emit('sdpOffer',offer);
+        console.log(offer)
+    })
+})
+
+function iceCandidate(candidate){
+    socket.emit('initice', candidate)
+}
+
+socket.on('sdpAnswer', (answer) => {
+    RtcPeer.processAnswer(answer)
+    console.log(answer)
+})
+
+socket.on('finalice', (candidate) => {
+    RtcPeer.addIceCandidate(candidate);
+    console.log('haha' + '\n' + candidate)
+    // setTimeout(() => {
+    //     RtcPeer.send(videostream);
+    // }, 2000);
+})
