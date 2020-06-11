@@ -48,8 +48,7 @@ $stopbutton.addEventListener('click', () => {
 
 $mirror.addEventListener('click',() => {
     RtcPeer=kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly({
-        localVideo: $video1,
-        remoteVideo: $video2,
+        remoteVideo: $video1,
         onicecandidate : iceCandidate
     }, function (error) {
         if (error){

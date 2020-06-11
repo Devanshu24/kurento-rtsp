@@ -30,10 +30,6 @@ const server = https.createServer({key: key, cert: cert }, app);
 
 const io=socketio(server);
 
-// app.get('/', (req, res) => {
-//     res.send(); 
-// });
-
 let kurentoClient =null;
 
 getKurentoClient(kurentoClient, (error, client)=> {
@@ -48,20 +44,7 @@ io.on('connection', (socket)=> {
     console.log("New web socket");
 
     let webRtcEndpoint;
-    let pipe;
     let queue =[];
-    let playerglobal;
-
-    //console.log(socket);
-    
-    //console.log(kurentoClient)
-
-    // setTimeout(() => {
-    //     console.log(pipe);
-    //     console.log("------------------------")
-    //     console.log(webRtcEndpoint)
-        
-    // }, 1000);
 
     socket.on('sdpOffer', (offer) => {
         kurentoClient.create('MediaPipeline', function(error, pipeline) {
@@ -69,14 +52,13 @@ io.on('connection', (socket)=> {
                 return console.log(error);
             }
     
-            // console.log(pipeline)
+            
             createMediaElems(pipeline, function(error, webRtc, player){
                 if (error){
                     return console.log(error)
                 }
     
                 if (queue){
-                    console.log(queue + '\n' + "queue")
                     while (queue.length){
                         let cand = queue.shift();
                         webRtc.addIceCandidate(cand)
@@ -110,7 +92,9 @@ io.on('connection', (socket)=> {
                     })
 
                     playeralt.play(function (error) {
-                        console.log("Error is" + "\n" + error)
+                        if (error){
+                            console.log("Error is" + "\n" + error)
+                        }
                     })
     
                     webRtcEndpoint=webRtcalt;
@@ -128,12 +112,6 @@ io.on('connection', (socket)=> {
 
     socket.on('initice', (cand) => {
         let candidate = kurento.getComplexType('IceCandidate')(cand);
-        // console.log(cand);
-        // console.log(candidate)
-
-        console.log(queue +'\n' + "q")
-
-        console.log(webRtcEndpoint)
 
         if (webRtcEndpoint){
             webRtcEndpoint.addIceCandidate(candidate);
@@ -142,10 +120,6 @@ io.on('connection', (socket)=> {
             queue.push(candidate);
         }
 
-        console.log(queue + '\n' + "qu")
-
-        
-        // socket.emit('finalice', candidate);
     })
 
     
@@ -198,11 +172,6 @@ function connectMediaElems(webRtc, player, callback){
         return callback(null, webRtc, player)
     });
 }
-
-// setTimeout(()=>{
-//         console.log('3 sec elapsed')
-//         console.log(kurentoClient);
-//     }, 3000)
 
 server.listen(8443, () => {
     console.log('listening on 8443'); 
