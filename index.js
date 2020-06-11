@@ -30,10 +30,6 @@ const server = https.createServer({key: key, cert: cert }, app);
 
 const io=socketio(server);
 
-// app.get('/', (req, res) => {
-//     res.send(); 
-// });
-
 let kurentoClient =null;
 
 getKurentoClient(kurentoClient, (error, client)=> {
@@ -47,25 +43,86 @@ getKurentoClient(kurentoClient, (error, client)=> {
 io.on('connection', (socket)=> {
     console.log("New web socket");
 
-    //console.log(socket);
-    
-    //console.log(kurentoClient)
+    let webRtcEndpoint;
+    let queue =[];
 
-    kurentoClient.create('MediaPipeline', function(error, pipeline) {
-        if (error){
-            return console.log(error);
-        }
-
-        pipeline.create('WebRtcEndpoint', (error,webRtc) => {
+    socket.on('sdpOffer', (offer) => {
+        kurentoClient.create('MediaPipeline', function(error, pipeline) {
             if (error){
-                pipeline.release();
+                return console.log(error);
             }
+    
+            
+            createMediaElems(pipeline, function(error, webRtc, player){
+                if (error){
+                    return console.log(error)
+                }
+    
+                if (queue){
+                    while (queue.length){
+                        let cand = queue.shift();
+                        webRtc.addIceCandidate(cand)
+                    }
+                }
+    
+                connectMediaElems(webRtc, player, function(error, webRtcalt, playeralt){
+                    if (error){
+                        pipeline.release();
+                    }
+    
+                    webRtcalt.on('OnIceCandidate', function(event) {
+                        let candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+                        socket.emit('finalice', candidate)
+                    })
 
-        })
+                    webRtcalt.processOffer(offer, function(error, answer) {
+                        if (error){
+                            pipeline.release()
+                            console.log(error);
+                        }
+            
+                        socket.emit('sdpAnswer', answer)
+            
+                        webRtcalt.gatherCandidates((error) => {
+                            if (error){
+                                console.log(error)
+                            }
+                        })
+                        
+                    })
 
+                    playeralt.play(function (error) {
+                        if (error){
+                            console.log("Error is" + "\n" + error)
+                        }
+                    })
+    
+                    webRtcEndpoint=webRtcalt;
+                    pipe = pipeline;
+                    playerglobal = playeralt;
+    
+                })   
+                
+            });
+                
+        });
+
+        
+    })
+
+    socket.on('initice', (cand) => {
+        let candidate = kurento.getComplexType('IceCandidate')(cand);
+
+        if (webRtcEndpoint){
+            webRtcEndpoint.addIceCandidate(candidate);
+        }
+        else {
+            queue.push(candidate);
+        }
 
     })
 
+    
 
 })
 
@@ -84,10 +141,37 @@ function getKurentoClient(client, callback){
     });
 }
 
-// setTimeout(()=>{
-//         console.log('3 sec elapsed')
-//         console.log(kurentoClient);
-//     }, 3000)
+function createMediaElems(pipeline, callback){
+    const url ="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"
+
+    pipeline.create('PlayerEndpoint', {uri : url}, function (error, player) {
+        if (error) {
+            pipeline.release()
+            return callback(error);
+        }
+    
+
+        pipeline.create('WebRtcEndpoint', (error,webRtc) => {
+            if (error){
+                pipeline.release();
+                return callback(error);
+            }
+
+        
+            return callback(null, webRtc, player)
+        })   
+        
+    })
+}
+
+function connectMediaElems(webRtc, player, callback){
+    player.connect(webRtc, function(error){
+        if (error){
+            return callback(error);
+        }
+        return callback(null, webRtc, player)
+    });
+}
 
 server.listen(8443, () => {
     console.log('listening on 8443'); 
