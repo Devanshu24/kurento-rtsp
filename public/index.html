@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Check</title>
+        <title>RTSP Stream</title>
         <link rel="icon" href="/img/favicon.png">
     </head>
 
     <body>
 
-        <button id="main">Start</button>
+        <video id="output" autoplay></video>
+        <button id="wstart">Start</button>
         <button id="stop">Stop</button>
-        <video autoplay playsinline></video>
+    
+        
 
         <script src="/socket.io/socket.io.js"></script>
         <script src="/js/client.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/7.4.0/adapter.js"></script>
+        <script src="/js/adapter.js"></script>
+        <script src="/js/kurento-utils.min.js"></script>
     </body>
 
 </html>
