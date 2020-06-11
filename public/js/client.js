@@ -6,7 +6,7 @@ const $video2 = document.querySelector('#output');
 const $stopbutton = document.querySelector('#stop');
 const $mirror = document.querySelector('#wstart');
 
-$stopbutton.setAttribute('disabled', 'disabled')
+// $stopbutton.setAttribute('disabled', 'disabled')
 // $mirror.setAttribute('disabled', 'disabled')
 
 let videostream = null;
@@ -21,8 +21,8 @@ $startbutton.addEventListener('click', ()=> {
         videostream = mediaStream;
         $video1.srcObject = mediaStream;
         console.log('hah')
-        $startbutton.setAttribute('disabled', 'disabled');
-        $stopbutton.removeAttribute('disabled');
+        //$startbutton.setAttribute('disabled', 'disabled');
+        //$stopbutton.removeAttribute('disabled');
         // $mirror.removeAttribute('disabled');
     }
 
@@ -35,12 +35,14 @@ $startbutton.addEventListener('click', ()=> {
 })
 
 $stopbutton.addEventListener('click', () => {
-    videostream.getTracks().forEach(function(track) {
-        track.stop();
-    });
+    // videostream.getTracks().forEach(function(track) {
+    //     track.stop();
+    // });
     $video1.srcObject=null;
-    $startbutton.removeAttribute('disabled');
-    $stopbutton.setAttribute('disabled', 'disabled');
+    RtcPeer.dispose()
+    RtcPeer = null;
+    //$startbutton.removeAttribute('disabled');
+    //$stopbutton.setAttribute('disabled', 'disabled');
 
 })
 
