@@ -61,6 +61,25 @@ $mirror.addEventListener('click',() => {
         socket.emit('sdpOffer',offer);
         console.log(offer)
     })
+
+    setTimeout(() => {
+        RtcPeer=kurentoUtils.WebRtcPeer.WebRtcPeerSendrecv({
+            localVideo: $video1,
+            remoteVideo: $video2,
+            onicecandidate : iceCandidate
+        }, function (error) {
+            if (error){
+                console.log(error)
+            }
+            console.log("dne")
+        }) 
+    
+        RtcPeer.generateOffer((error,offer)=> {
+            console.log(error)
+            socket.emit('sdpOffer',offer);
+            console.log(offer)
+        })
+    }, 900);
 })
 
 function iceCandidate(candidate){
