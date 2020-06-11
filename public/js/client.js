@@ -64,12 +64,18 @@ $mirror.addEventListener('click',() => {
 })
 
 function iceCandidate(candidate){
-    //console.log(candidate);
+    socket.emit('initice', candidate)
 }
 
 socket.on('sdpAnswer', (answer) => {
     RtcPeer.processAnswer(answer)
     console.log(answer)
+})
 
-    // RtcPeer.send(videostream);
+socket.on('finalice', (candidate) => {
+    RtcPeer.addIceCandidate(candidate);
+    console.log('haha' + '\n' + candidate)
+    // setTimeout(() => {
+    //     RtcPeer.send(videostream);
+    // }, 2000);
 })

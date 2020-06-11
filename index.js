@@ -49,6 +49,7 @@ io.on('connection', (socket)=> {
 
     let webRtcEndpoint;
     let pipe;
+    let queue =[];
 
     //console.log(socket);
     
@@ -65,26 +66,39 @@ io.on('connection', (socket)=> {
                 return console.log(error)
             }
 
-            connectMediaElems(webRtc, function(error){
+            if (queue){
+                console.log(queue + '\n' + "queue")
+                while (queue.length){
+                    let cand = queue.shift();
+                    webRtc.addIceCandidate(cand)
+                }
+            }
+
+            connectMediaElems(webRtc, function(error, webRtcalt){
                 if (error){
                     pipeline.release();
                 }
 
-            })
+                webRtcalt.on('OnIceCandidate', function(event) {
+                    let candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+                    socket.emit('finalice', candidate)
+                })
 
-            webRtcEndpoint=webRtc;
-            pipe = pipeline;
+                webRtcEndpoint=webRtcalt;
+                pipe = pipeline;
+
+            })   
             
         });
             
     });
 
-    // setTimeout(() => {
-    //     console.log(pipe);
-    //     console.log("------------------------")
-    //     console.log(webRtcEndpoint)
+    setTimeout(() => {
+        console.log(pipe);
+        console.log("------------------------")
+        console.log(webRtcEndpoint)
         
-    // }, 1000);
+    }, 1000);
 
     socket.on('sdpOffer', (offer) => {
         webRtcEndpoint.processOffer(offer, function(error, answer) {
@@ -94,15 +108,40 @@ io.on('connection', (socket)=> {
             }
 
             socket.emit('sdpAnswer', answer)
+
+            webRtcEndpoint.gatherCandidates((error) => {
+                if (error){
+                    console.log(error)
+                }
+            })
             
         })
     })
+
+    socket.on('initice', (cand) => {
+        let candidate = kurento.getComplexType('IceCandidate')(cand);
+        console.log(cand);
+        console.log(candidate)
+
+        console.log(queue +'\n' + "queue")
+
+        if (webRtcEndpoint){
+            webRtcEndpoint.addIceCandidate(candidate);
+        }
+        else {
+            queue.push(candidate);
+        }
+        
+        // queue.push(candidate)
+
+        // webRtcEndpoint.on('OnIceCandidate', function(event) {
+        //     let candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+        //     socket.emit('finalice', candidate)
+        // })
+        // socket.emit('finalice', candidate);
+    })
+
     
-
-   
-
-
-
 
 })
 
@@ -136,7 +175,7 @@ function connectMediaElems(webRtc, callback){
         if (error){
             return callback(error);
         }
-        return callback(null)
+        return callback(null, webRtc)
     });
 }
 
